@@ -4,9 +4,10 @@ metadata:
   name: argocd-secrets-role
 rules:
 - apiGroups:
-  - ""
+  - "*"
   resources:
   - secrets
+  - jobs
   verbs:
   - get
   - list
