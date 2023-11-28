@@ -11,7 +11,7 @@ type Image {
     vulnNoneCount: Int @search
     vulnTotalCount: Int @search
 }
-​
+
 type Component {
     id: String! @id
     type: String!
@@ -23,7 +23,7 @@ type Component {
     vulnerabilities: [Vulnerability!] @hasInverse(field: affects)
     images: [Image!] @hasInverse(field: components)
 }
-​
+
 enum Severity {
     critical
     high
@@ -33,7 +33,7 @@ enum Severity {
     none
     unknown
 }
-​
+
 type Vulnerability {
     id: String! @id
     parent: String! @search(by: [exact])
@@ -47,13 +47,13 @@ type Vulnerability {
     cvss: [CVSS!]
     affects: [Component!] @hasInverse(field: vulnerabilities)
 }
-​
+
 type CWE {
     id: String! @id
     name: String!
     description: String
 }
-​
+
 type CVSS {
     type: String
     score: String
