@@ -1,0 +1,10 @@
+spec:
+  template:
+    spec:
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: cmp-config
+        name: cmp-config
+      - emptyDir: {}
+        name: cmp-tmp
