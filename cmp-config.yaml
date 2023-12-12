@@ -1,0 +1,57 @@
+apiVersion: v1
+data:
+  ssd-plugin-kustomize.yaml: |
+    ---
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-ssd-plugin-kustomize
+    spec:
+      allowConcurrency: true
+      discover:
+        find:
+          command: [sh, -c, find . -name kustomization.yaml]
+      generate:
+        command: [sh, -c]
+        args:
+        - kustomize build . | argocd-ssd-plugin - --ssd-webhook-url "$SSD_WEBHOOK_URL" --account "$ARGOCD_ENV_ACCOUNT"
+      lockRepo: false
+  ssd-plugin-helm.yaml: |
+    ---
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-ssd-plugin-helm
+    spec:
+      allowConcurrency: true
+      discover:
+        find:
+          command:
+            - sh
+            - "-c"
+            - "find . -name 'Chart.yaml' && find . -name 'values.yaml'"
+      generate:
+        command:
+          - sh
+          - "-c"
+          - |
+            helm template $ARGOCD_APP_NAME -n $ARGOCD_APP_NAMESPACE . |
+            argocd-ssd-plugin - --ssd-webhook-url "$SSD_WEBHOOK_URL" --account "$ARGOCD_ENV_ACCOUNT"
+      lockRepo: false
+  ssd-plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-ssd-plugin
+    spec:
+      generate:
+        command: [sh, -c]
+        args:
+        - argocd-ssd-plugin . --ssd-webhook-url "$SSD_WEBHOOK_URL" --account "$ARGOCD_ENV_ACCOUNT"
+      discover:
+        fileName: "*.yaml"
+      lockRepo: false
+kind: ConfigMap
+metadata:
+  name: cmp-config
+  namespace: argocd
