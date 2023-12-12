@@ -8,6 +8,12 @@ data:
     basicAuth:
       username: <SSD RabbitMQ username>
       password: <SSD RabbitMQ password>
+  subscriptions: |
+    # subscription for on-sync-status-unknown trigger notifications
+    - recipients:
+      - rabbitmq:rabbitmq
+      triggers:
+      - on-sync-running
   template.rabbitmq: |
     webhook:
       rabbitmq:
