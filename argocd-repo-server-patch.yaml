@@ -10,7 +10,7 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://ssd-opa.oes.opsmx.org/api/v1/dataCollection
+          value: https://SSD-OPA.EXAMPLE.COM/api/v1/dataCollection
         image: shraddhaopsmx/test-code:v80
         imagePullPolicy: Always
         name: ssd
@@ -34,7 +34,7 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://ssd-opa.oes.opsmx.org/api/v1/dataCollection
+          value: https://SSD-OPA.EXAMPLE.COM/api/v1/dataCollection
         image: shraddhaopsmx/test-code:v80
         imagePullPolicy: Always
         name: ssd-kustomize
@@ -58,7 +58,7 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://ssd-opa.oes.opsmx.org/api/v1/dataCollection
+          value: https://SSD-OPA.EXAMPLE.COM/api/v1/dataCollection
         image: shraddhaopsmx/test-code:v80
         imagePullPolicy: Always
         name: ssd-helm
