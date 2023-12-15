@@ -6,8 +6,8 @@ data:
   service.webhook.rabbitmq: |
     url: http://<RabbitMQ external IP or DNS value>:15672/api/exchanges/%2f/argo.events/publish
     basicAuth:
-      username: <SSD RabbitMQ username>
-      password: <SSD RabbitMQ password>
+      username: $rabbitmq-username
+      password: $rabbitmq-password
   subscriptions: |
     # subscription for on-sync-status-unknown trigger notifications
     - recipients:
