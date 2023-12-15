@@ -1,5 +1,6 @@
 data:
   context: |
+    argocdUrl: "<ArgoCD URL>"
     argocdName: "<ArgoCD name>"
     argoEnvironmentList: "<accountname>|https://<Cluster IP address>"
   service.webhook.rabbitmq: |
