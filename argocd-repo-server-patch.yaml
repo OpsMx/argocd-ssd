@@ -10,8 +10,12 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD-OPA.EXAMPLE.COM/api/v1/dataCollection
-        image: shraddhaopsmx/test-code:v80
+          value: https://SSD-OPA.EXAMPLE.COM/webhook/api/v1/dataCollection
+        - name: ORGANIZATION_NAME
+          value: opsmx
+        - name: SSD_ARGOCD_SERVICE_TOKEN
+          value: token
+        image: shraddhaopsmx/argocd-ssd-plugin:v0.0.3
         imagePullPolicy: Always
         name: ssd
         resources: {}
@@ -34,8 +38,12 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD-OPA.EXAMPLE.COM/api/v1/dataCollection
-        image: shraddhaopsmx/test-code:v80
+          value: https://SSD-OPA.EXAMPLE.COM/webhook/api/v1/dataCollection
+        - name: ORGANIZATION_NAME
+          value: opsmx
+        - name: SSD_ARGOCD_SERVICE_TOKEN
+          value: token
+        image: shraddhaopsmx/argocd-ssd-plugin:v0.0.3
         imagePullPolicy: Always
         name: ssd-kustomize
         resources: {}
@@ -58,8 +66,12 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD-OPA.EXAMPLE.COM/api/v1/dataCollection
-        image: shraddhaopsmx/test-code:v80
+          value: https://SSD-OPA.EXAMPLE.COM/webhook/api/v1/dataCollection
+        - name: ORGANIZATION_NAME
+          value: opsmx
+        - name: SSD_ARGOCD_SERVICE_TOKEN
+          value: token
+        image: shraddhaopsmx/argocd-ssd-plugin:v0.0.3
         imagePullPolicy: Always
         name: ssd-helm
         resources: {}
