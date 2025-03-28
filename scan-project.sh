@@ -15,12 +15,12 @@ set -e
 #fi
 echo $SSD_URL
 echo $SSD_TEAM_TOKEN
-#echo $VM_IP
+echo $VM_IP
 UPLOAD_URL=$SSD_URL
 SSD_TOKEN=$SSD_TEAM_TOKEN
-#UPLOAD_IP=$VM_IP
+UPLOAD_IP=$VM_IP
 DNS=$(echo "$SSD_URL" | awk -F[/:] '{print $4}')
-#HOST=$DNS:$UPLOAD_IP
+HOST=$DNS:$UPLOAD_IP
 
 # Check if the correct number of arguments are passed (host and organisationname)
 if [ "$#" -ne 2 ]; then
@@ -56,7 +56,7 @@ ARTIFACT_PATH_IN_LOCAL=`pwd`
 command -v git >/dev/null 2>&1 || { echo >&2 "git is required but it's not installed.  Aborting."; exit 1; }
 command -v docker >/dev/null 2>&1 || { echo >&2 "docker is required but it's not installed.  Aborting."; exit 1; }
 
-sudo docker run -v $SCM_PATH_IN_LOCAL:/home/scanner/source/ docker.io/opsmx11/ssd-scanner-cli:379a293-29   --scanners=semgrep,trivy,openssf --trivy-scanners=sourcecodesbom,codelicensescan,codesecretscan  --artifact-type=file --artifact-name="$ARTIFACT_NAME"   --artifact-tag="$ARTIFACT_TAG" --artifact-path=/home/scanner/source/ --source-code-path="/home/scanner/source/"   --repository-url="$GIT_URL"   --branch="$GIT_BRANCH"   --build-id="$BUILD_NUMBER"   --offline-mode=false --upload-url="$SSD_URL" --ssd-token="$SSD_TOKEN"
+sudo docker run --add-host $HOST -v $SCM_PATH_IN_LOCAL:/home/scanner/source/ docker.io/opsmx11/ssd-scanner-cli:379a293-29   --scanners=semgrep,trivy,openssf --trivy-scanners=sourcecodesbom,codelicensescan,codesecretscan  --artifact-type=file --artifact-name="$ARTIFACT_NAME"   --artifact-tag="$ARTIFACT_TAG" --artifact-path=/home/scanner/source/ --source-code-path="/home/scanner/source/"   --repository-url="$GIT_URL"   --branch="$GIT_BRANCH"   --build-id="$BUILD_NUMBER"   --offline-mode=false --upload-url="$SSD_URL" --ssd-token="$SSD_TOKEN"
 
 
 curl --location "$SSD_URL/webhook/v1/ssd" \
