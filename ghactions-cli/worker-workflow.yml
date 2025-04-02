@@ -31,6 +31,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout repository code
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+
       # Set up Python (for semgrep installation)
       - name: Set up Python
         uses: actions/setup-python@v4
