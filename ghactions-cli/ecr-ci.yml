@@ -21,7 +21,7 @@ jobs:
 
   setup_rabbitmq:
     needs: build_ecr_image
-    uses: saitejaopsmx/github-actions-integration/.github/workflows/rabbitmq.yml@main
+    uses: ORGANISATION/REPOSITORY/.github/workflows/rabbitmq.yml@main
     with:
       rabbitmq_url: "http://34xxxx:15672"
       rabbitmq_queue: "githubactions-ssd"
