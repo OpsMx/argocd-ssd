@@ -1,0 +1,161 @@
+name: Send details to RabbitmQ
+
+on:
+  workflow_call:
+    inputs:
+      rabbitmq_url:
+        description: 'RabbitMQ URL'
+        required: true
+        type: string
+      rabbitmq_queue:
+        description: 'RabbitMQ queue'
+        required: true
+        type: string
+      rabbitmq_exchange:
+        description: 'RabbitMQ exchange'
+        required: true
+        type: string
+      rabbitmq_binding_key:
+        description: 'RabbitMQ binding key'
+        required: true
+        type: string
+      org:
+        description: 'Organization name'
+        required: true
+        type: string
+    secrets:
+      rabbitmq_user:
+        description: 'RabbitMQ user'
+        required: true
+      rabbitmq_pass:
+        description: 'RabbitMQ password'
+        required: true
+      AWS_ACCESS_KEY_ID:
+        description: 'aws user'
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        description: 'aws  password'
+        required: true
+      AWS_REGION:
+        description: 'aws region'
+        required: true
+
+jobs:
+  rabbitmq_setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # Replace with desired Node.js version (optional)
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Download a single artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: my-artifact
+
+      - name: View image
+        run: |
+             source image.txt
+             echo "image=$image" >> $GITHUB_ENV
+             #echo "image_tag=$(echo $image | cut -d':' -f2)" >> tag.txt
+             echo "Retrieved image is $image"
+
+      - name: Show ENV content (debugging purpose)
+        run: cat $GITHUB_ENV
+
+      - name: Setup AWS ECR Details
+        uses:  aws-actions/configure-aws-credentials@v1.7.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Pull the image to get the digest
+        run: docker pull ${{ env.image }}
+
+      - name: Get the image digest
+        run: |
+             echo "IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.image }} | cut -d':' -f2)" >> $GITHUB_ENV
+             echo "${{ env.image }}" >> tag.txt
+             echo "IMAGE_TAG=$(cat tag.txt | cut -d':' -f2)" >> $GITHUB_ENV
+
+      - name: Get Repository Metadata
+        run: |
+          echo "Fetching repository metadata"
+          VISIBILITY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }} | jq -r '.visibility')
+          PARENT_REPO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }} | jq -r '.parent.full_name // empty')
+          LICENSE_NAME=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }} | jq -r '.license.spdx_id // empty')
+          echo "VISIBILITY=$VISIBILITY" >> $GITHUB_ENV
+          echo "PARENT_REPO=$PARENT_REPO" >> $GITHUB_ENV
+          echo "LICENSE_NAME=$LICENSE_NAME" >> $GITHUB_ENV
+
+      - name: Create RabbitMQ Exchange and Queue, and Bind them
+        run: |
+          # Create the exchange
+          curl -u ${{ secrets.rabbitmq_user }}:${{ secrets.rabbitmq_pass }} \
+               -H "Content-Type: application/json" \
+               -X PUT "${{ inputs.rabbitmq_url }}/api/exchanges/%2F/${{ inputs.rabbitmq_exchange }}" \
+               -d '{"type":"direct","durable":true}'
+
+          # Create the queue
+          curl -u ${{ secrets.rabbitmq_user }}:${{ secrets.rabbitmq_pass }} \
+               -H "Content-Type: application/json" \
+               -X PUT "${{ inputs.rabbitmq_url }}/api/queues/%2F/${{ inputs.rabbitmq_queue }}" \
+               -d '{"durable":true}'
+
+          # Bind the queue to the exchange with the binding key
+          curl -u ${{ secrets.rabbitmq_user }}:${{ secrets.rabbitmq_pass }} \
+               -H "Content-Type: application/json" \
+               -X POST "${{ inputs.rabbitmq_url }}/api/bindings/%2F/e/${{ inputs.rabbitmq_exchange }}/q/${{ inputs.rabbitmq_queue }}" \
+               -d '{"routing_key":"${{ inputs.rabbitmq_binding_key }}"}'
+
+      - name: Prepare and Send RabbitMQ Message
+        run: |
+          echo "Sending message to RabbitMQ"
+          
+          DIFF_COMMITS=$(echo "${{ env.DIFF_COMMITS }}" | jq -Rs .)
+          
+          MESSAGE=$(jq -n --arg image "${{ env.image }}" \
+                          --arg imgsha "sha256:${{ env.IMAGE_SHA }}" \
+                          --arg jobId "${{ github.job }}" \
+                          --arg buildNumber "${{ github.run_number }}" \
+                          --arg gitUrl "${{ github.event.repository.html_url }}" \
+                          --arg gitCommit "${{ github.sha }}" \
+                          --arg gitBranch "${{ github.ref_name }}" \
+                          --arg jobUrl "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+                          --arg buildTime "${{ github.event.repository.updated_at }}" \
+                          --arg buildUser "${{ github.actor }}" \
+                          --arg diffCommits "" \
+                          --arg visibility "${{ env.VISIBILITY }}" \
+                          --arg parentRepo "${{ env.PARENT_REPO }}" \
+                          --arg licenseName "${{ env.LICENSE_NAME }}" \
+                          --arg organization "${{ inputs.org }}" \
+                          --arg imageTag "${{ env.IMAGE_TAG }}" \
+                          --arg workflowName "Use Reusable Workflow" \
+                          '{image: $image, imageTag: $imageTag, imgsha: $imgsha, jobId: $jobId, buildNumber: $buildNumber, gitUrl: $gitUrl, gitCommit: $gitCommit, gitBranch: $gitBranch, jobUrl: $jobUrl, buildTime: $buildTime, buildUser: $buildUser, diffCommits: $diffCommits, visibility: $visibility, parentRepo: $parentRepo, licenseName: $licenseName, organization: $organization, workflowName: $workflowName}')
+          
+          PAYLOAD=$(jq -n --arg vhost "/" \
+                          --arg name "${{ inputs.rabbitmq_exchange }}" \
+                          --argjson properties '{}' \
+                          --arg routing_key "${{ inputs.rabbitmq_binding_key }}" \
+                          --arg delivery_mode "2" \
+                          --arg payload "$MESSAGE" \
+                          --arg payload_encoding "string" \
+                          '{vhost: $vhost, name: $name, properties: $properties, routing_key: $routing_key, delivery_mode: $delivery_mode, payload: $payload, payload_encoding: $payload_encoding}')
+          
+          curl -u ${{ secrets.rabbitmq_user }}:${{ secrets.rabbitmq_pass }} \
+              -H "Content-Type: application/json" \
+              -X POST "${{ inputs.rabbitmq_url }}/api/exchanges/%2F/${{ inputs.rabbitmq_exchange }}/publish" \
+              --data-binary "$PAYLOAD" || { echo "Failed to send message"; exit 1; }

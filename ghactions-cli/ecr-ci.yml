@@ -1,0 +1,36 @@
+name: ECR CI Workflow
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_ecr_image:
+    uses: saitejaopsmx/github-actions-integration/.github/workflows/ecr-image-private.yml@main
+    with:
+      image_tag: ${{ github.run_id }}
+      registry: '7xxxxx.dkr.ecr.xxxxxxxxx.amazonaws.com'
+      repository: 'coindcx-repo'
+      org: "porter"
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+  setup_rabbitmq:
+    needs: build_ecr_image
+    uses: saitejaopsmx/github-actions-integration/.github/workflows/rabbitmq.yml@main
+    with:
+      rabbitmq_url: "http://34xxxx:15672"
+      rabbitmq_queue: "githubactions-ssd"
+      rabbitmq_exchange: "githubactions.events"
+      rabbitmq_binding_key: "githubactions-ssd"
+      org: "porter"
+    secrets:
+      rabbitmq_user: ${{ secrets.RABBITMQ_USER }}
+      rabbitmq_pass: ${{ secrets.RABBITMQ_PASS }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
