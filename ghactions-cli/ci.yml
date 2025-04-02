@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    uses: saitejaopsmx/ssd-cli-ecr/.github/workflows/worker-workflow.yml@main
+    uses: ORGANISATION/REPOSITORY/.github/workflows/worker-workflow.yml@BRANCH
     with:
       image_tag: ${{ github.run_id }}
       repository: 'update-repository'

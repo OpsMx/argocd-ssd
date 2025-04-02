@@ -8,7 +8,7 @@ on:
 
 jobs:
   build_ecr_image:
-    uses: saitejaopsmx/github-actions-integration/.github/workflows/ecr-image-private.yml@main
+    uses: ORGANISATION/REPOSITORY/.github/workflows/ecr-image-private.yml@BRANCH
     with:
       image_tag: ${{ github.run_id }}
       registry: '7xxxxx.dkr.ecr.xxxxxxxxx.amazonaws.com'
@@ -21,7 +21,7 @@ jobs:
 
   setup_rabbitmq:
     needs: build_ecr_image
-    uses: ORGANISATION/REPOSITORY/.github/workflows/rabbitmq.yml@main
+    uses: ORGANISATION/REPOSITORY/.github/workflows/rabbitmq.yml@BRANCH
     with:
       rabbitmq_url: "http://34xxxx:15672"
       rabbitmq_queue: "githubactions-ssd"
