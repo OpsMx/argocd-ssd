@@ -21,6 +21,12 @@ on:
         type: string
 
     secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_REGION:
+        required: true
       SSD_URL:
         required: true
       SSD_TEAM_TOKEN:
@@ -35,26 +41,6 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v3
 
-      # Set up Python (for semgrep installation)
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      # Install Semgrep directly
-      - name: Install Semgrep
-        run: |
-          pip install semgrep==1.50.0
-          semgrep --version
-
-      # Download SSD Scanner CLI with specific architecture
-      - name: Download SSD Scanner CLI
-        run: |
-          curl -L -o ssd-scanner-cli https://github.com/OpsMx/ssd-scanner-cli-public/releases/download/v0.0.50-alpha22/ssd-scanner-cli-amd64
-          chmod +x ssd-scanner-cli
-          sudo mv ssd-scanner-cli /usr/local/bin/
-          # Verify the download
-          ssd-scanner-cli --version || echo "Failed to get version, but continuing"
 
       # Install other dependencies
       - name: Install additional dependencies
@@ -82,21 +68,25 @@ jobs:
           echo "=== Potential config/secret files ==="
           find . -name "*.env*" -o -name "*.yaml" -o -name "*.yml" -o -name "*.conf" -o -name "*.config" -o -name "*.json" -o -name "*.properties" | grep -v "/.git/"
 
-      # Setup Scan Environment with custom persistent directories
-      - name: Setup Scan Environment
-        run: |
-          CUSTOM_SCAN_DIR="${GITHUB_WORKSPACE}/scan-results-dir"
-          REPORT_DIR="${GITHUB_WORKSPACE}/report-dir"
-          LOG_DIR="${GITHUB_WORKSPACE}/logs-dir"
 
-          mkdir -p "$CUSTOM_SCAN_DIR" "$REPORT_DIR" "$LOG_DIR"
-          chmod -R 777 "$CUSTOM_SCAN_DIR" "$REPORT_DIR" "$LOG_DIR"
+      - name: Setup AWS ECR Details
+        uses:  aws-actions/configure-aws-credentials@v1.7.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-          # Set environment variables for later steps
-          echo "CUSTOM_SCAN_DIR=$CUSTOM_SCAN_DIR" >> $GITHUB_ENV
-          echo "DEFAULT_SCAN_DIR=/home/runner/.local/bin/ssd-scan-results" >> $GITHUB_ENV
-          echo "REPORT_DIR=$REPORT_DIR" >> $GITHUB_ENV
-          echo "LOG_DIR=$LOG_DIR" >> $GITHUB_ENV
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push docker image to Amazon ECR
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.image_tag }}
 
       - name: Print GitHub Environment Variables
         env:
@@ -106,6 +96,7 @@ jobs:
           #echo "Artifact Name: ${{ inputs.registry }}/dev-docker-docker/${{ inputs.image_name }}:${{ inputs.image_tag }}"
           echo "Artifact Name: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.image_tag }}"
           echo "Registry: ${{ inputs.registry }}"
+          #echo "Image Name: ${{ inputs.image_name }}"
           echo "Artifact Tag: ${{ inputs.image_tag }}"
           echo "SSD URL: $SSD_URL"
           echo "SSD Token: $SSD_TEAM_TOKEN"
@@ -115,56 +106,6 @@ jobs:
           echo "Build ID: ${{ github.run_id }}"
 
 
-      # Run Source Code Scans with SSD Scanner CLI
-      - name: Run Source Code Scans
-        env:
-          SSD_URL: ${{ secrets.SSD_URL }}
-          SSD_TEAM_TOKEN: ${{ secrets.SSD_TEAM_TOKEN }}
-        run: |
-          echo "=== Running SOURCE CODE scans with SSD Scanner CLI ==="
-          ssd-scanner-cli \
-            --scanners=trivy,semgrep,openssf \
-            --trivy-scanners=codelicensescan,codesecretscan,sbom,imagelicensescan,imagesecretscan \
-            --artifact-type="image" \
-            --artifact-name="${{ inputs.registry }}/${{ inputs.repository }}" \
-            --artifact-tag="${{ inputs.image_tag }}" \
-            --upload-url="${SSD_URL}" \
-            --ssd-token="${SSD_TEAM_TOKEN}" \
-            --source-code-path="${GITHUB_WORKSPACE}" \
-            --repository-url="https://github.com/${{ github.repository }}" \
-            --branch=${{ github.ref_name }} \
-            --build-id=${{ github.run_id }} \
-            --offline-mode=false \
-            --debug=true \
-            --keep-results=true  \
-
-          SCAN_EXIT_CODE=$?
-          echo "SCAN_EXIT_CODE=$SCAN_EXIT_CODE" >> $GITHUB_ENV
-          echo "SCAN_EXIT_CODE=$SCAN_EXIT_CODE"
-
-      # Step 10: Print Scan Results if offline mode is enabled
-      - name: Print Scan Results
-        if: always()
-        run: |
-          echo "=== Scan Results Summary ==="
-          echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Build ID: ${{ github.run_id }}"
-          echo "Image: $IMAGE_NAME:$TIMESTAMP"
-          echo "Scan Exit Code: ${{ env.SCAN_EXIT_CODE }}"
-          echo ""
-          echo "Scan result files:"
-          find $SCAN_DIR -type f -exec echo "File: {}" \;
-
-      # Step 11: Check scan status
-      - name: Check scan status
-        if: always()
-        run: |
-          if [ "${{ env.SCAN_EXIT_CODE }}" != "0" ]; then
-            echo "Security scan failed with exit code ${{ env.SCAN_EXIT_CODE }}"
-            exit 1
-          fi
-      
       # Step-11-1: Print GitHub Environment Variables
       - name: Print GitHub Environment Variables
         run: |
@@ -178,6 +119,7 @@ jobs:
           echo "Organization: ${{ inputs.org }}"
           echo "Git Branch: ${{ github.ref_name }}"
           echo "Artifact Image: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.image_tag }}"
+          #echo "Artifact Service: ${{ inputs.image_name }}"
       # Step 12: Send Build Event to SSD
       - name: Send Build Event to SSD
         env:
@@ -192,6 +134,7 @@ jobs:
                  "gitcommit": "${{ github.sha }}",
                  "builduser": "${{ github.actor }}",
                  "giturl": "https://github.com/${{ github.repository }}",
+                 "tool": "githubactions",
                  "gitbranch": "${{ github.ref_name }}",
                  "artifacts": [
                    {
