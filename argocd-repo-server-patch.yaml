@@ -15,7 +15,7 @@ spec:
           value: opsmx
         - name: SSD_ARGOCD_SERVICE_TOKEN
           value: token
-        image: shraddhaopsmx/argocd-ssd-plugin:v0.0.3
+        image: quay.io/opsmxpublic/argocd-ssd-plugin:2025-02-00
         imagePullPolicy: Always
         name: ssd
         resources: {}
@@ -43,7 +43,7 @@ spec:
           value: opsmx
         - name: SSD_ARGOCD_SERVICE_TOKEN
           value: token
-        image: shraddhaopsmx/argocd-ssd-plugin:v0.0.3
+        image: quay.io/opsmxpublic/argocd-ssd-plugin:2025-02-00
         imagePullPolicy: Always
         name: ssd-kustomize
         resources: {}
@@ -71,7 +71,7 @@ spec:
           value: opsmx
         - name: SSD_ARGOCD_SERVICE_TOKEN
           value: token
-        image: shraddhaopsmx/argocd-ssd-plugin:v0.0.3
+        image: quay.io/opsmxpublic/argocd-ssd-plugin:2025-02-00
         imagePullPolicy: Always
         name: ssd-helm
         resources: {}
