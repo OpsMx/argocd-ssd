@@ -10,9 +10,9 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD-OPA.EXAMPLE.COM/webhook/api/v1/dataCollection
+          value: https://SSD.EXAMPLE.COM/webhook/api/v1/dataCollection
         - name: ORGANIZATION_NAME
-          value: opsmx
+          value: ORGNAME
         - name: SSD_ARGOCD_SERVICE_TOKEN
           value: token
         image: quay.io/opsmxpublic/argocd-ssd-plugin:2025-02-00
@@ -38,9 +38,9 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD-OPA.EXAMPLE.COM/webhook/api/v1/dataCollection
+          value: https://SSD.EXAMPLE.COM/webhook/api/v1/dataCollection
         - name: ORGANIZATION_NAME
-          value: opsmx
+          value: ORGNAME
         - name: SSD_ARGOCD_SERVICE_TOKEN
           value: token
         image: quay.io/opsmxpublic/argocd-ssd-plugin:2025-02-00
@@ -66,9 +66,9 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD-OPA.EXAMPLE.COM/webhook/api/v1/dataCollection
+          value: https://SSD.EXAMPLE.COM/webhook/api/v1/dataCollection
         - name: ORGANIZATION_NAME
-          value: opsmx
+          value: ORGNAME
         - name: SSD_ARGOCD_SERVICE_TOKEN
           value: token
         image: quay.io/opsmxpublic/argocd-ssd-plugin:2025-02-00
