@@ -10,7 +10,7 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD.EXAMPLE.COM/webhook/api/v1/dataCollection
+          value: https://SSD.EXAMPLE.COM/webhook/api/v1/datacollection
         - name: ORGANIZATION_NAME
           value: ORGNAME
         - name: SSD_ARGOCD_SERVICE_TOKEN
@@ -38,7 +38,7 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD.EXAMPLE.COM/webhook/api/v1/dataCollection
+          value: https://SSD.EXAMPLE.COM/webhook/api/v1/datacollection
         - name: ORGANIZATION_NAME
           value: ORGNAME
         - name: SSD_ARGOCD_SERVICE_TOKEN
@@ -66,7 +66,7 @@ spec:
         - /var/run/argocd/argocd-cmp-server
         env:
         - name: SSD_WEBHOOK_URL
-          value: https://SSD.EXAMPLE.COM/webhook/api/v1/dataCollection
+          value: https://SSD.EXAMPLE.COM/webhook/api/v1/datacollection
         - name: ORGANIZATION_NAME
           value: ORGNAME
         - name: SSD_ARGOCD_SERVICE_TOKEN

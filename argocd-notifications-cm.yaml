@@ -3,7 +3,7 @@ data:
     argocdUrl: "<ArgoCD URL>"
     argocdName: "<ArgoCD name>"
     argoEnvironmentList: "argocd"
-    argoClusterServer: "<Cluster Server IP/URL>"    
+    argoClusterServer: "<Cluster Server IP/URL>"
     organization: "<Organisation Name>"
   service.webhook.rabbitmq: |
     url: http://<RabbitMQ external IP or DNS value>:15672/api/exchanges/%2f/argo.events/publish
