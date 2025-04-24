@@ -1,0 +1,23 @@
+name: SSD CLI Flow Pushing the events
+
+on:
+  push:
+    branches:
+      - cli
+
+    paths:
+      - 'README.md'
+
+jobs:
+  build:
+    uses: saitejaopsmx/gcr-ghaactions/.github/workflows/cli.yml@cli
+    with:
+      image_tag: ${{ github.run_id }}
+      registry: 'gcr.io'
+      project: 'development-project-210505'
+      repository: 'gcr-test'
+      org: "portor"
+    secrets:
+      GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      SSD_URL: ${{ secrets.SSD_URL }}
+      SSD_TEAM_TOKEN: ${{ secrets.SSD_TEAM_TOKEN }}

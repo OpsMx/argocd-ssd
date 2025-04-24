@@ -1,0 +1,225 @@
+name: SSD Scanner CLI Build and Push Images to GCR
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        required: true
+        type: string
+      registry:
+        required: true
+        type: string
+      project:
+        required: true
+        type: string
+      repository:
+        required: true
+        type: string
+      org:
+        required: true
+        type: string
+      application_tags:
+        required: false
+        type: string
+
+    secrets:
+      GCP_SERVICE_ACCOUNT_KEY:
+        description: 'gcr account json file'
+        required: true
+      SSD_URL:
+        required: true
+      SSD_TEAM_TOKEN:
+        required: true
+        
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repository code
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+
+      # Set up Python (for semgrep installation)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Install Semgrep directly
+      - name: Install Semgrep
+        run: |
+          pip install semgrep==1.50.0
+          semgrep --version
+
+      # Download SSD Scanner CLI with specific architecture
+      - name: Download SSD Scanner CLI
+        run: |
+          curl -L -o ssd-scanner-cli https://github.com/OpsMx/ssd-scanner-cli-public/releases/download/v2025.03.07/ssd-scanner-cli-amd64
+          chmod +x ssd-scanner-cli
+          sudo mv ssd-scanner-cli /usr/local/bin/
+          # Verify the download
+          ssd-scanner-cli --version || echo "Failed to get version, but continuing"
+
+      # Install other dependencies for SSD Scanner CLI
+      - name: Install additional dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq bc
+
+      # Check for .env and config files
+      - name: Examine source code structure
+        run: |
+          echo "=== Repository Structure ==="
+          find . -type f | grep -v "/.git/" | sort
+          
+          # Check if .env file exists
+          if [ -f ".env" ]; then
+            echo ".env file found - will be scanned for secrets"
+            LINES=$(wc -l < .env)
+            echo ".env contains $LINES lines"
+            echo "Lines potentially containing secrets: $(grep -i -E 'key|secret|password|token|credential' .env | wc -l)"
+          else
+            echo ".env file not found"
+          fi
+          
+          # Look for any files that might contain sensitive data
+          echo "=== Potential config/secret files ==="
+          find . -name "*.env*" -o -name "*.yaml" -o -name "*.yml" -o -name "*.conf" -o -name "*.config" -o -name "*.json" -o -name "*.properties" | grep -v "/.git/"
+
+      # Setup Scan Environment with custom persistent directories
+      - name: Setup Scan Environment
+        run: |
+          CUSTOM_SCAN_DIR="${GITHUB_WORKSPACE}/scan-results-dir"
+          REPORT_DIR="${GITHUB_WORKSPACE}/report-dir"
+          LOG_DIR="${GITHUB_WORKSPACE}/logs-dir"
+
+          mkdir -p "$CUSTOM_SCAN_DIR" "$REPORT_DIR" "$LOG_DIR"
+          chmod -R 777 "$CUSTOM_SCAN_DIR" "$REPORT_DIR" "$LOG_DIR"
+
+          # Set environment variables for later steps
+          echo "CUSTOM_SCAN_DIR=$CUSTOM_SCAN_DIR" >> $GITHUB_ENV
+          echo "DEFAULT_SCAN_DIR=/home/runner/.local/bin/ssd-scan-results" >> $GITHUB_ENV
+          echo "REPORT_DIR=$REPORT_DIR" >> $GITHUB_ENV
+          echo "LOG_DIR=$LOG_DIR" >> $GITHUB_ENV
+
+      - name: Log in to Google Cloud
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry }}
+          username: _json_key
+          password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Build, tag, and push docker image to Amazon ECR
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ inputs.registry }}/${{ inputs.project }}/${{ inputs.repository }}:${{ inputs.image_tag }}
+
+      - name: Print GitHub Environment Variables
+        env:
+          SSD_URL: ${{ secrets.SSD_URL }}
+          SSD_TEAM_TOKEN: ${{ secrets.SSD_TEAM_TOKEN }}
+        run: |
+          #echo "Artifact Name: ${{ inputs.registry }}/dev-docker-docker/${{ inputs.image_name }}:${{ inputs.image_tag }}"
+          echo "Artifact Name: ${{ inputs.registry }}/${{ inputs.project }}/${{ inputs.repository }}:${{ inputs.image_tag }}"
+          echo "Registry: ${{ inputs.registry }}"
+          echo "Project: ${{ inputs.project }}"
+          #echo "Image Name: ${{ inputs.image_name }}"
+          echo "Artifact Tag: ${{ inputs.image_tag }}"
+          echo "SSD URL: $SSD_URL"
+          echo "SSD Token: $SSD_TEAM_TOKEN"
+          echo "Source Code Path: ${GITHUB_WORKSPACE}"
+          echo "Repository URL: https://github.com/${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Build ID: ${{ github.run_id }}"
+
+
+      # Run Source Code Scans with SSD Scanner CLI
+      - name: Run Source Code Scans
+        env:
+          SSD_URL: ${{ secrets.SSD_URL }}
+          SSD_TEAM_TOKEN: ${{ secrets.SSD_TEAM_TOKEN }}
+        run: |
+          echo "=== Running SOURCE CODE scans with SSD Scanner CLI ==="
+          ssd-scanner-cli \
+            --scanners=trivy,semgrep,openssf \
+            --trivy-scanners=codelicensescan,codesecretscan,sbom,imagelicensescan,imagesecretscan \
+            --artifact-type="image" \
+            --artifact-name="${{ inputs.registry }}/${{ inputs.project }}/${{ inputs.repository }}" \
+            --artifact-tag="${{ inputs.image_tag }}" \
+            --upload-url="${SSD_URL}" \
+            --ssd-token="${SSD_TEAM_TOKEN}" \
+            --source-code-path="${GITHUB_WORKSPACE}" \
+            --repository-url="https://github.com/${{ github.repository }}" \
+            --branch=${{ github.ref_name }} \
+            --build-id=${{ github.run_id }} \
+            --offline-mode=false \
+            --debug=true \
+            --keep-results=true  \
+
+          SCAN_EXIT_CODE=$?
+          echo "SCAN_EXIT_CODE=$SCAN_EXIT_CODE" >> $GITHUB_ENV
+          echo "SCAN_EXIT_CODE=$SCAN_EXIT_CODE"
+
+      # Step 10: Print Scan Results if offline mode is enabled
+      - name: Print Scan Results
+        if: always()
+        run: |
+          echo "=== Scan Results Summary ==="
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Build ID: ${{ github.run_id }}"
+          echo "Image: $IMAGE_NAME:$TIMESTAMP"
+          echo "Scan Exit Code: ${{ env.SCAN_EXIT_CODE }}"
+          echo ""
+          echo "Scan result files:"
+          find $SCAN_DIR -type f -exec echo "File: {}" \;
+
+      # Step 11: Check scan status
+      - name: Check scan status
+        if: always()
+        run: |
+          if [ "${{ env.SCAN_EXIT_CODE }}" != "0" ]; then
+            echo "Security scan failed with exit code ${{ env.SCAN_EXIT_CODE }}"
+            exit 1
+          fi
+      
+      # Step-11-1: Print GitHub Environment Variables
+      - name: Print GitHub Environment Variables
+        run: |
+          echo "Job Name: ${{ github.workflow }}"
+          echo "Build Number: ${{ github.run_number }}"
+          echo "Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "Git Commit: ${{ github.sha }}"
+          echo "Build User: ${{ github.actor }}"
+          echo "Git URL: https://github.com/${{ github.repository }}"
+          echo "Only Repository Name: ${{ github.event.repository.name }}"
+          echo "Organization: ${{ inputs.org }}"
+          echo "Git Branch: ${{ github.ref_name }}"
+          echo "Artifact Image: ${{ inputs.registry }}/${{ inputs.project }}/${{ inputs.repository }}:${{ inputs.image_tag }}"
+          #echo "Artifact Service: ${{ inputs.image_name }}"
+      # Step 12: Send Build Event to SSD
+      - name: Send Build Event to SSD
+        env:
+          SSD_URL: ${{ secrets.SSD_URL }}/webhook/v1/ssd
+        run: |
+          curl --location -v "$SSD_URL" \
+               --header "Content-Type: application/json" \
+               --data '{
+                 "jobname": "${{ github.workflow }}",
+                 "buildnumber": "${{ github.run_number }}",
+                 "joburl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                 "gitcommit": "${{ github.sha }}",
+                 "builduser": "${{ github.actor }}",
+                 "giturl": "https://github.com/${{ github.repository }}",
+                 "tool": "githubactions",
+                 "gitbranch": "${{ github.ref_name }}",
+                 "artifacts": [
+                   {
+                      "image": "${{ inputs.registry }}/${{ inputs.project }}/${{ inputs.repository }}:${{ inputs.image_tag }}"
+                   }
+                 ]
+               }'
