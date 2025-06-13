@@ -55,7 +55,7 @@ jobs:
       # Download SSD Scanner CLI with specific architecture
       - name: Download SSD Scanner CLI
         run: |
-          curl -L -o ssd-scanner-cli https://github.com/OpsMx/ssd-scanner-cli-public/releases/download/v2025.03.07/ssd-scanner-cli-amd64
+          curl -L -o ssd-scanner-cli https://github.com/OpsMx/ssd-scanner-cli-public/releases/download/v2025.05.06/ssd-scanner-cli-amd64
           chmod +x ssd-scanner-cli
           sudo mv ssd-scanner-cli /usr/local/bin/
           # Verify the download
@@ -205,9 +205,11 @@ jobs:
       - name: Send Build Event to SSD
         env:
           SSD_URL: ${{ secrets.SSD_URL }}/webhook/v1/ssd
+          SSD_TEAM_TOKEN: ${{ secrets.SSD_TEAM_TOKEN }}
         run: |
           curl --location -v "$SSD_URL" \
                --header "Content-Type: application/json" \
+               --header  "X-OpsMx-Auth: ${SSD_TEAM_TOKEN}" \
                --data '{
                  "jobname": "${{ github.workflow }}",
                  "buildnumber": "${{ github.run_number }}",
