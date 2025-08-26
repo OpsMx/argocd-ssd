@@ -4,7 +4,7 @@ metadata:
   name: project
 data:
   project.yaml: |
-    - name: docker-ss-2
+    - name: docker-ss-3
       scanType: artifactScan
       platform: docker
       accountId: '0x2a69'
