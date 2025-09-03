@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: project
+  name: adhoc-project-cm
 data:
   project.yaml: |
     - name: docker-ss-9
