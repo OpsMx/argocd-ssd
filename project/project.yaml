@@ -4,18 +4,35 @@ metadata:
   name: adhoc-project-cm
 data:
   project.yaml: |
-    - name: docker-ss-9
-      scanType: artifactScan
-      platform: docker
-      accountId: '0x2a69'
+    - name: org-level-github-project
+      scanType: sourceScan
+      platform: github
+      accountName: test-gh
       teamId: ''
       scanLevel: repoLevel
-      organisation: opsmx11
-      type: ''
+      organisation: AswathyAsokan-opsmx
+      type: user
       projectConfigs:
-        - repository: tcollector
+        - repository: snyk-test
           scheduleTime: 0
-          tag:
-            - latest
-          tagPattern: ''
+          branch:
+            - onlyMain
+          branchPattern: ''
           scanUpto: 0
+    - name: team-level-github-project
+      scanType: sourceScan
+      platform: github
+      accountName: test-all (default)
+      teamName: default
+      scanLevel: repoLevel
+      organisation: OpsMx
+      type: organisation
+      projectConfigs:
+        - repository: supplychain-api
+          scheduleTime: 0
+          branch:
+            - onlyMain
+          branchPattern: ''
+          scanUpto: 0
+
+    
