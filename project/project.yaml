@@ -4,7 +4,7 @@ metadata:
   name: adhoc-project-cm
 data:
   project.yaml: |
-    - name: org-level-github-project
+    - name: team-project
       scanType: sourceScan
       platform: github
       accountName: test-gh
@@ -19,7 +19,7 @@ data:
             - onlyMain
           branchPattern: ''
           scanUpto: 0
-    - name: team-level-github-project
+    - name: team-project
       scanType: sourceScan
       platform: github
       accountName: test-all (default)
@@ -34,5 +34,17 @@ data:
             - onlyMain
           branchPattern: ''
           scanUpto: 0
-
-    
+    - name: gitlab-org-project
+      scanType: sourceScan
+      platform: gitlab-server
+      accountName: gitlab-server
+      scanLevel: orgLevel
+      organisation: dev
+      type: ''
+      projectConfigs:
+        - repository: all
+          scheduleTime: 0
+          branch:
+            - all
+          branchPattern: ''
+          scanUpto: 5
