@@ -4,7 +4,7 @@ metadata:
   name: adhoc-project-cm
 data:
   project.yaml: |
-    - name: team-project
+    - name: team-project-org
       scanType: sourceScan
       platform: github
       accountName: test-gh
