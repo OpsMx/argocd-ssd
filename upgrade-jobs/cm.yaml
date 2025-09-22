@@ -1,0 +1,10 @@
+### Update the From Version and To Version ####
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: upgrade-job
+data:
+  upgrade-job.yaml: |
+    prodGraphQLAddr: http://dgraph-public:8080
+    upgradeFromVersion: UPDATE.HERE
+    upgradeToVersion: UPDATE.HERE

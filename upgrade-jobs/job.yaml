@@ -1,0 +1,53 @@
+##### Update the Image and Release Name #######
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: upgrade-job
+spec:
+  selector:
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/job-name: upgrade-job
+        job-name: upgrade-job
+    spec:
+      containers:
+      - env:
+        - name: S3_ENDPOINT_URL
+          value: http://RELEASENAME-minio:9000
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-secret
+              Key: username
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-secret
+              Key: password
+        Image: UPDATE IMAGE
+        imagePullPolicy: IfNotPresent
+        name: upgrade-job
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - name: upgrade-job-volume
+          mountPath: /app/config/upgrade-job.yaml
+          subPath: upgrade-job.yaml
+        - name: token
+          readOnly: true
+          mountPath: /app/secrets/prod-token/ 
+      restartPolicy: Never
+      volumes:
+      - name: token
+        secret:
+          secretName: ssd-opa-token
+          defaultMode: 420
+      - name: upgrade-job-volume
+        configMap:
+          name: upgrade-job
+          items:
+            - key: upgrade-job.yaml
+              path: upgrade-job.yaml
+          defaultMode: 420
+      - name: scanresult
