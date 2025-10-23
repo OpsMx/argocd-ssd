@@ -41,6 +41,7 @@ spec:
             - |
               kubectl create secret generic rabbitmq-secret --from-literal=username=rabbitmq --from-literal=password=Networks123 -n "$namespace"
               kubectl create secret generic redis-secret --from-literal=password=12345sdfaadsd -n "$namespace"
+              kubectl create secret generic hasura-admin-secret --from-literal=admin-secret=987456sdfaadsd -n "$namespace"
               kubectl create secret generic temporal-visibility-store --from-literal=username=postgres --from-literal=password=network123 -n "$namespace"
               kubectl create secret generic temporal-default-store --from-literal=username=postgres --from-literal=password=network123 -n "$namespace"
               kubectl create secret generic ssdsecret --from-literal=AESEncryptionKey=OKPQK0JWS2TVTW9E86IWWYN3VY4Z34WJ -n "$namespace"
