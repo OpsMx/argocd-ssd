@@ -32,18 +32,16 @@ fi
 sudo docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --group-add ${DOCKER_GID} \
+    -v "$HOME/.docker/config.json:/home/scanner/.docker/config.json" \
     -v "${SCAN_RESULTS_DIR}:/home/scanner/.local/bin/ssd-scan-results" \
     -v "${LOCAL_SOURCE_PATH}:/home/scanner/source" \
-    opsmx11/ssd-scanner-cli:arm-v1.2 \
-    --scanners=trivy,semgrep,grype \
-    --source-code-path="/home/scanner/source" \
-    --repository-url="${REPO_URL}" \
-    --branch="${BRANCH}" \
+    opsmx11/ssd-scanner-cli:arm-v1.4 \
+    --scanners=trivy,grype \
     --build-id="${BUILD_ID}" \
     --artifact-type=image \
     --artifact-name="${ARTIFACT_NAME}" \
     --artifact-tag="${ARTIFACT_TAG}" \
-    --trivy-scanners=codelicensescan,codesecretscan \
+    --trivy-scanners=imagelicensescan,imagesecretscan \
     --grype-scanners=sbom \
     --offline-mode \
     --firewall-evaluate
