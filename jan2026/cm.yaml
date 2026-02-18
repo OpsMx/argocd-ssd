@@ -5,5 +5,5 @@ metadata:
 data:
   upgrade-job.yaml: |
     prodGraphQLAddr: http://dgraph-public:8080
-    upgradeFromVersion: Junne2025
+    upgradeFromVersion: June2025
     upgradeToVersion: January2026
