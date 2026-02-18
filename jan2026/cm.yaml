@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: upgrade-job
+data:
+  upgrade-job.yaml: |
+    prodGraphQLAddr: http://dgraph-public:8080
+    upgradeFromVersion: Junne2025
+    upgradeToVersion: January2026

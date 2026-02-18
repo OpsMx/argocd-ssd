@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: upgrade-job
+spec:
+  selector:
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/job-name: upgrade-job
+        job-name: upgrade-job
+    spec:
+      serviceAccount: token-machine
+      containers:
+        Image: opsmx11/upgrade-script:v2026.01.02 
+        imagePullPolicy: IfNotPresent
+        name: upgrade-job
+        volumeMounts:
+        - name: upgrade-job-volume
+          mountPath: /app/config/upgrade-job.yaml
+          subPath: upgrade-job.yaml
+        - name: token
+          readOnly: true
+          mountPath: /app/secrets/prod-token/ 
+      restartPolicy: Never
+      volumes:
+      - name: token
+        secret:
+          secretName: ssd-opa-token
+          defaultMode: 420
+      - name: upgrade-job-volume
+        configMap:
+          name: upgrade-job
+          items:
+            - key: upgrade-job.yaml
+              path: upgrade-job.yaml
+          defaultMode: 420
+      - name: scanresult
