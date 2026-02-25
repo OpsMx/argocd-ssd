@@ -12,7 +12,7 @@ spec:
     spec:
       serviceAccount: token-machine
       containers:
-        Image: opsmx11/upgrade-script:v2026.01.02 
+      - image: opsmx11/upgrade-script:v2026.01.02
         imagePullPolicy: IfNotPresent
         name: upgrade-job
         volumeMounts:
